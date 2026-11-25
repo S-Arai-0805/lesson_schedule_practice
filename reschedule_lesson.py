@@ -82,8 +82,7 @@ def execute_reschedule(
 
         if student_conflict_result is not None:
             print(
-                "Error: Lesson for this student "
-                "is already scheduled."
+                "Error: Lesson for this student is already scheduled."
             )
             return
 

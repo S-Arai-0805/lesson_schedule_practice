@@ -473,3 +473,83 @@ def test_reschedule_with_instructor_and_subject():
     )
 
     connection.close()
+
+
+def test_reschedule_rejects_student_conflict(capsys):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO lessons (
+            lesson_id,
+            student_id,
+            instructor_id,
+            subject_id,
+            time_slot_id,
+            lesson_date,
+            lesson_state,
+            rescheduled_from_lesson_id
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            2,
+            1,
+            2,
+            1,
+            1,
+            "2026-10-17",
+            "scheduled",
+            None
+        )
+    )
+
+    connection.commit()
+    connection.close()
+
+    execute_reschedule(1, "2026-10-17", 1, 1, 1)
+    captured = capsys.readouterr()
+
+    assert (
+        "Error: Lesson for this student is already scheduled."
+        in captured.out
+    )
+
+    connection = get_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT 
+                student_id,
+                instructor_id,
+                time_slot_id,
+                lesson_date,
+                lesson_state
+            FROM lessons
+            WHERE lesson_id = ?           
+            """,
+            (1,)
+        )
+
+        result_origin_lesson_status = cursor.fetchone()
+
+        assert result_origin_lesson_status == (1, 1, 1, "2026-10-10", "scheduled")
+
+        cursor.execute(
+            """
+            SELECT lesson_id, instructor_id, lesson_state
+            FROM lessons
+            WHERE student_id = ?
+              AND lesson_date = ?
+              AND time_slot_id = ?
+            """,
+            (1, "2026-10-17", 1)
+        )
+
+        result_destination_lessons = cursor.fetchall()
+        assert result_destination_lessons == [(2, 2, "scheduled")]
+
+    finally:
+        connection.close()
