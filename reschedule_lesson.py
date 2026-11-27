@@ -51,6 +51,7 @@ def execute_reschedule(
             print(
                 f"Error: lesson cannot be rescheduled because its state is {pre_lesson_state}"
             )
+            return
 
         # ----------------------------
         # Student conflict

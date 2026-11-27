@@ -623,3 +623,30 @@ def test_reschedule_reject_instructor_conflict(capsys):
     assert result_destination_lessons == [(reserved_lesson_id, "scheduled")]
 
     connection.close()
+
+
+def test_reject_double_reschedule(capsys):
+    execute_reschedule(1, "2026-10-17", 1, 1, 1)
+    capsys.readouterr()
+
+    execute_reschedule(1, "2026-10-24", 1, 1, 1)
+    captured = capsys.readouterr()
+    assert("Error: lesson cannot be rescheduled because its state is rescheduled" in captured.out)
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT lesson_date, lesson_state
+        FROM lessons
+        WHERE student_id = ?
+        ORDER BY lesson_date
+        """,
+        (1,)
+    )
+
+    result_double_reschedule = cursor.fetchall()
+    assert result_double_reschedule == [("2026-10-10", "rescheduled"), ("2026-10-17", "scheduled")]
+
+    connection.close()
