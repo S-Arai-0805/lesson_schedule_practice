@@ -39,4 +39,4 @@ python -m pip install -r requirements.txt
 python -m pytest -q
 ```
 
-開発環境（WSL / Ubuntu）で11件のテストが通過しました。
+開発環境（WSL / Ubuntu）で12件のテストが通過しました。
